@@ -158,55 +158,36 @@ double* matrice_distanceOpti(double* traj1, int n1, double* traj2, int n2) {
     double* matrice_frechetOpti(double* distances, int n1, int n2)
     {
         double* frechet = new double[n1*n2];
-        int i = 0, j = 0, jmin = 0;
+        int i = 0, j = 0;
 
+        for (int i=0; i < n1*n2; i++) frechet[i] = -1;
 
-        for (int i=0; i < n1*n2; i++) {
-            frechet[i] = -1;
-        }
-
+        frechet[0] = distances[0];
         double mini;
 
-        for(; i < n1; i++){
+        for (i = 1; i < n1 && distances[i * n2] != -1; i++) frechet[i*n2] = max(distances[i*n2],frechet[ (i-1) * n2]);
+
+        for (j = 1; j < n2 && distances[j] != -1; j++) frechet[j] = max(distances[j], frechet[(j-1)]);
+
+        for(i = 1; i < n1; i++){
             int i2 = i * n2;
-            for(j = 0;  j < n2; ) {
+            for(j = 1;  j < n2; ) {
                 if( distances[i2 + j] == -1 ) j++;
                 else break;
             }
-            jmin = j;
             int iM_jM, iM_j, i_jM, i_j;
             for( ; j < n2 && distances[i2 + j] != -1; j++){
-                if( i > 0){
-                    i_j = i2 + j;
-                    iM_j = i_j - n2;
+                mini = -1;
+                i_j = i2 + j;
+                iM_j = i_j - n2;
+                i_jM = i_j - 1;
+                iM_jM = iM_j - 1;
 
-                    if( j >  0){
-                        iM_jM = iM_j - 1;
-                        i_jM = i_j - 1;
+                if( distances[iM_jM] != -1 ) mini = frechet[iM_jM];
+                if( distances[iM_j] != -1 ) mini = (mini == -1 ) ? frechet[iM_j]: min(mini, frechet[iM_j]);
+                if( distances[i_jM] != -1 ) mini = (mini == -1 ) ? frechet[i_jM]: min(mini, frechet[i_jM]);
 
-                        if( frechet[iM_jM] != -1 ){
-                            mini = frechet[iM_jM];
-                            if( frechet[iM_j] != -1 ) mini = min(mini, frechet[iM_j]);
-                            if( frechet[i_jM] != -1 ) mini = min(mini, frechet[i_jM]);
-
-                            frechet[i_j] = max(distances[i_j], mini);
-
-                        } else if( frechet[iM_j] != -1 ){
-                            mini = frechet[iM_j];
-                            if( frechet[i_jM] != -1 ) mini = min(mini, frechet[i_jM]);
-                            frechet[i_j] = max(distances[i_j], mini);
-
-                        }else if( frechet[i_jM] != -1 ) frechet[i_j] = max(distances[i_j], frechet[i_jM]);
-                        else frechet[i_j] = distances[i_j];
-
-                    }else if( frechet[iM_j] != -1 ) frechet[i_j] = max(distances[i_j], frechet[iM_j]);
-                    else frechet[i_j] = distances[i_j];
-                }else if( j >  0){
-                    i_jM = j - 1;
-                    i_j = j;
-                    if( frechet[i_jM] != -1 ) frechet[i_j] = max(distances[i_j], frechet[i_jM]);
-                    else frechet[i_j] = distances[i_j];
-                }else frechet[0] = distances[0];
+                frechet[i_j] = max(distances[i_j], mini);
             }
         }
         return frechet;
