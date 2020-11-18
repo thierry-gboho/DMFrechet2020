@@ -139,19 +139,52 @@ double* matrice_distanceOpti(double* traj1, int n1, double* traj2, int n2) {
     double* matrice_frechet(double* distances, int n1, int n2)
     {
         double* frechet = new double[n1*n2];
+        int i = 0, j = 0, jmin = 0;
 
-        frechet[0] = distances[0];
 
-        for (int i=1; i<n1; i++)
-            frechet[i*n2] = max(distances[i*n2],frechet[(i-1)*n2]);
+        for (int i=0; i < n1*n2; i++) {
+            frechet[i] = -1;
+        }
 
-        for (int j=1; j<n2; j++)
-            frechet[j] = max(distances[j], frechet[(j-1)]);
+        double mini;
+        for(; i < n1; i++){
+            int i2 = i * n2;
+            for(j = 0;  j < n2; ) {
+                if( distances[i2 + j] == -1 ) j++;
+                else break;
+            }
+            jmin = j;
+            int iM_jM, iM_j, i_jM, i_j;
+            for( ; j < n2 && distances[i2 + j] != -1; j++){
+                int mini;
+                if( i > 0){
+                    i_j = i2 + j;
+                    iM_j = i_j - n2;
+                    if( j >  0){
+                        iM_jM = iM_j - 1;
+                        i_jM = i_j - 1;
+                        if( distances[iM_jM] != -1 ){
+                            mini = distances[iM_jM];
+                            if( distances[iM_j] != -1 ) mini = fmin(mini, distances[iM_j]);
+                            if( distances[i_jM] != -1 ) mini = fmin(mini, distances[i_jM]);
+                            frechet[i_j] = fmax(distances[i_j], mini);
+                        } else if( distances[iM_j] != -1 ){
+                            mini = distances[iM_j];
+                            if( distances[i_jM] != -1 ) mini = fmin(mini, distances[i_jM]);
+                            frechet[i_j] = fmax(distances[i_j], mini);
+                        }else if( distances[i_jM] != -1 ) frechet[i_j] = fmax(distances[i_j], distances[i_jM]);
+                        else frechet[i_j] = distances[i_j];
 
-        for (int i=1; i<n1; i++)
-            for (int j=1; j<n2; j++)
-                frechet[i*n2+j] = max(distances[i*n2+j],min(frechet[(i-1)*n2+j],min(frechet[i*n2+(j-1)],frechet[(i-1)*n2+(j-1)])));
-
+                    }else if( distances[iM_j] != -1 ) frechet[i_j] = fmax(distances[i_j], distances[iM_j]);
+                    else frechet[i_j] = distances[i_j];
+                }else if( j >  0){
+                    i_jM = j - 1;
+                    i_j = j;
+                    if( distances[i_jM] != -1 ) frechet[i_j] = fmax(distances[i_j], distances[i_jM]);
+                    else frechet[i_j] = distances[i_j];
+                }else frechet[0] = distances[0];
+            }
+        }
         return frechet;
 
     }
